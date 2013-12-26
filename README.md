@@ -35,6 +35,7 @@ Simple Injection has support for views and methods injection. The injection
 has executed when the method ```inject()``` from Simple Activities is called.
 
 * View Injection
+
 ```java
 
 	@InjectView(id=R.id.txt1)
@@ -43,6 +44,7 @@ has executed when the method ```inject()``` from Simple Activities is called.
 ```
 
 * Method Injection
+
 ```java
 
 	@InjectMethod(id=R.id.btn1)
@@ -58,7 +60,8 @@ has executed when the method ```inject()``` from Simple Activities is called.
 	
 ```
 
-Sample Class
+* Sample Class
+
 ```java
 
 
