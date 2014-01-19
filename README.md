@@ -10,13 +10,6 @@ Goals
 * Create eficient applications
 
 
-Dependencies
-------------
-
-* [ActionBarSherlock](https://github.com/JakeWharton/ActionBarSherlock)
-* [Menu Drawer](https://github.com/SimonVT/android-menudrawer)
-
-
 Wow Factor
 ----------
 
