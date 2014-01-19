@@ -21,7 +21,7 @@ Wow Factor
 ----------
 
 * Dependency Injection
-* Menu Drawer (Compatible With old android versions)
+* MV* Project management
 
 _______________________________________________________________________
 
@@ -94,3 +94,54 @@ public class MainActivity extends SimpleActivity {
 
 ```
 
+
+
+MV*
+---
+Simple Model-View-* provides functionalities to separate in the application the data layer,
+the logic and the UI's. this facilitates the process of application development and its maintenance.
+
+* Data Layer
+The data layer is composed of ```Models``` and ```Collections```. One ```Model``` has many fields.
+One Collection has many ```Model``` instances.
+Models and Collections allow assign callbacks (Delegates) when an item is added, modified or removed.
+Let's see the sample:
+
+```java
+
+class test {
+    @Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		Collection collection = new Collection();
+		collection.on("add", new CollectionDelegate() {
+			
+			@Override
+			public void event(Model item) {
+				System.out.println("added "+item);
+			}
+		});
+		collection.on("edit", new CollectionDelegate() {
+			
+			@Override
+			public void event(Model item) {
+				System.out.println("item modified: "+item);
+			}
+		});
+		
+		Model m = new Model(collection);
+		m.addField("newKey", "newValue");
+		m.addField("anotherKey", "anotherValue");
+    }
+}
+
+```
+
+The output of las sample is:
+
+```
+added {}
+item modified: {newKey=newValue}
+item modified: {newKey=newValue, anotherKey=anotherValue}
+```

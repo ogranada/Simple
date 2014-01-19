@@ -5,10 +5,7 @@ import java.lang.reflect.Method;
 
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
 
 import com.framework.simple.Interfaces.injection.InjectMethod;
 import com.framework.simple.Interfaces.injection.InjectView;
