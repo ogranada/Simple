@@ -47,7 +47,7 @@ has executed when the method ```inject()``` from Simple Activities is called.
 
 	@InjectMethod(id=R.id.btn1,method="OnLongClickListener")
 	public boolean onBtnLongClick(View v){
-		txt1.setText("Long Mensaje.....");
+		txt1.setText("Long Message.....");
 		return true;
 	}
 	
@@ -95,7 +95,8 @@ Simple Model-View-* provides functionalities to separate in the application the 
 the logic and the UI's. this facilitates the process of application development and its maintenance.
 
 * Data Layer
-The data layer is composed of ```Models``` and ```Collections```. One ```Model``` has many fields.
+___________
+The data layer is composed by ```Models``` and ```Collections```. One ```Model``` has many fields.
 One Collection has many ```Model``` instances.
 Models and Collections allow assign callbacks (Delegates) when an item is added, modified or removed.
 Let's see the sample:
