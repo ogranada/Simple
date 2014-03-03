@@ -250,6 +250,7 @@ public class RESTDataSource implements DataSource {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Map<String, Object> toMap(JSONObject json) {
 		Map<String, Object> mapa = new HashMap<String, Object>();
 		Iterator<String> iter = json.keys();
