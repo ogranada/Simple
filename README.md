@@ -94,10 +94,16 @@ MV*
 Simple Model-View-* provides functionalities to separate in the application the data layer,
 the logic and the UI's. this facilitates the process of application development and its maintenance.
 
+<<<<<<< HEAD
 * Data Layer
 The data layer is composed by ```Models``` and ```Collections```. One ```Model``` has many fields.
 One ```Collection``` has many ```Model``` instances.
 ```Models``` and ```Collections``` allow assign callbacks (Delegates) when an item is added, modified or removed.
+=======
+* Data Layer: The data layer is composed by ```Models``` and ```Collections```. One ```Model``` has many fields.
+One Collection has many ```Model``` instances.
+Models and Collections allow assign callbacks (Delegates) when an item is added, modified or removed.
+>>>>>>> 7ab3d3cdcc4cdec996a1514506aded62698796d6
 Let's see the sample:
 
 ```java
