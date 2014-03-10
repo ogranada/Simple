@@ -1,12 +1,14 @@
 package com.framework.simple.datalayer.sources;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import android.R.string;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.framework.simple.interfaces.Callback;
 import com.framework.simple.interfaces.DataSource;
@@ -18,6 +20,8 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 	public static Context CONTEXT = null;
 	private static SQLiteDataSource instance = null;
 
+	private static Map<String, List<Map<String, String>>> tables;
+
 	private SQLiteDataSource(Context context, String name,
 			CursorFactory factory, int version) {
 		super(context, name, factory, version);
@@ -27,7 +31,7 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 		this(CONTEXT, NAME, null, VERSION);
 	}
 
-	public SQLiteDataSource getSigletonInstance(Context context, String name,
+	public static SQLiteDataSource getSigletonInstance(Context context, String name,
 			int version) {
 		CONTEXT = context;
 		NAME = name;
@@ -47,15 +51,69 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 		return instance;
 	}
 
+	public static void addTable(String nombre, List<Map<String, String>> columns) {
+		if (tables == null) {
+			tables = new HashMap<String, List<Map<String,String>>>();
+		}
+		tables.put(nombre, columns);
+	}
+
+	public static Map<String, String> makeColumn(String name, String type,
+			boolean pk, boolean autoincrement, String complement) {
+		Map<String, String> col = new HashMap<String, String>();
+		col.put("name", name);
+		col.put("type", type);
+		col.put("pk", pk ? "y" : "n");
+		col.put("ai", pk ? "y" : "n");
+		col.put("comp", complement);
+		return col;
+	}
+
+	public static Map<String, String> makeColumn(String name, String type,
+			boolean pk) {
+		return makeColumn(name, type, pk, type.toUpperCase().equals("INTEGER")&&pk, "");
+	}
+
+	private String makeTableQuery(String tablename, List<Map<String,String>> columns) {
+		String colname;
+		String type;
+		String primkey;
+		String autoinc;
+		String comp;
+		String query = "CREATE TABLE IF NOT EXISTS %s(%s)";
+		String cols = "";
+		boolean first = true;
+		for (Map<String, String> col : columns) {
+			if(first){
+				first = false;
+			} else {
+				cols += ", ";
+			}
+			colname = (String) col.get("name");
+			type    = (String) col.get("type");
+			primkey = ((String) col.get("pk")).equals("y")?"PRIMARY KEY":"";
+			autoinc = ((String) col.get("ai")).equals("y")?"AUTOINCREMENT":"";
+			comp    = (String) col.get("comp");
+			cols += String.format("%s %s %s %s %s", colname, type, primkey, autoinc, comp).trim();
+		}
+		return String.format(query, tablename, cols);
+	}
+	
+	public void createTables() {
+		for (String name : tables.keySet()) {
+			String query = makeTableQuery(name, tables.get(name));
+			System.err.println(query);
+			this.getWritableDatabase().execSQL(query);
+		}
+	}
+	
 	@Override
 	public void onCreate(SQLiteDatabase database) {
-		// TODO: add tables dynamically
+		
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -65,23 +123,17 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 	}
 
 	@Override
-	public void postData(String apiSection, Map<String, String> params,
+	public void saveData(String apiSection, Map<String, String> params,
 			Callback callback) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
-	public void putData(String apiSection, Map<String, String> params,
+	public void updateData(String apiSection, Map<String, String> params,
 			Callback callback) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void deleteData(String apiSection, String id, Callback callback) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

@@ -136,7 +136,7 @@ public class RESTDataSource implements DataSource {
 	}
 
 	@Override
-	public void postData(String apiSection, Map<String, String> params,
+	public void saveData(String apiSection, Map<String, String> params,
 			Callback callback) {
 		try {
 			String spec = apiSection;
@@ -175,7 +175,7 @@ public class RESTDataSource implements DataSource {
 	}
 
 	@Override
-	public void putData(String apiSection, Map<String, String> params,
+	public void updateData(String apiSection, Map<String, String> params,
 			Callback callback) {
 		try {
 			String spec = apiSection;
