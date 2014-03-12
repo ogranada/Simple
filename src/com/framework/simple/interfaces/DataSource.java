@@ -2,15 +2,17 @@ package com.framework.simple.interfaces;
 
 import java.util.Map;
 
+import android.util.Pair;
+
 public interface DataSource {
-	public void getData(String apiSection, Map<String, String> params,
+	public void getData(String section, Map<String, String> params,
 			Callback callback);
 
-	public void saveData(String apiSection, Map<String, String> params,
+	public void saveData(String section, Map<String, String> params,
 			Callback callback);
 
-	void updateData(String apiSection, Map<String, String> params,
+	void updateData(String section, String pk, Map<String, String> params,
 			Callback callback);
 
-	void deleteData(String apiSection, String id, Callback callback);
+	void deleteData(String section, String id, Callback callback);
 }

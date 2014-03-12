@@ -30,6 +30,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 import com.framework.simple.interfaces.Callback;
 import com.framework.simple.interfaces.DataSource;
 
@@ -175,15 +177,20 @@ public class RESTDataSource implements DataSource {
 	}
 
 	@Override
-	public void updateData(String apiSection, Map<String, String> params,
-			Callback callback) {
+	public void updateData(String apiSection, String pk,
+			Map<String, String> params, Callback callback) {
 		try {
+			if (!params.containsKey(pk)) {
+				Log.e("SQLiteDataSource Error", String.format(
+						"'%s' key does not exists into params map", pk));
+				return;
+			}
 			String spec = apiSection;
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
 			spec = spec.endsWith("/") ? spec : spec + "/";
+			spec += params.get(pk) + "/";
 			HttpPut dhttpput = new HttpPut(uri + spec);
-			dhttpput.setHeader("Content-Type",
-					"application/json;charset=UTF-8");
+			dhttpput.setHeader("Content-Type", "application/json;charset=UTF-8");
 			try {
 				dhttpput.setEntity(parsePostParams(params));
 				HttpResponse dresponse = dhttpclient.execute(dhttpput,
@@ -214,8 +221,7 @@ public class RESTDataSource implements DataSource {
 	}
 
 	@Override
-	public void deleteData(String apiSection, String id,
-			Callback callback) {
+	public void deleteData(String apiSection, String id, Callback callback) {
 		try {
 			String spec = apiSection;
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
@@ -249,7 +255,7 @@ public class RESTDataSource implements DataSource {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> toMap(JSONObject json) {
 		Map<String, Object> mapa = new HashMap<String, Object>();

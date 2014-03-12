@@ -1,14 +1,17 @@
 package com.framework.simple.datalayer.sources;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.util.Pair;
 
 import com.framework.simple.interfaces.Callback;
 import com.framework.simple.interfaces.DataSource;
@@ -31,8 +34,8 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 		this(CONTEXT, NAME, null, VERSION);
 	}
 
-	public static SQLiteDataSource getSigletonInstance(Context context, String name,
-			int version) {
+	public static SQLiteDataSource getSigletonInstance(Context context,
+			String name, int version) {
 		CONTEXT = context;
 		NAME = name;
 		VERSION = version;
@@ -53,7 +56,7 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 
 	public static void addTable(String nombre, List<Map<String, String>> columns) {
 		if (tables == null) {
-			tables = new HashMap<String, List<Map<String,String>>>();
+			tables = new HashMap<String, List<Map<String, String>>>();
 		}
 		tables.put(nombre, columns);
 	}
@@ -71,10 +74,12 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 
 	public static Map<String, String> makeColumn(String name, String type,
 			boolean pk) {
-		return makeColumn(name, type, pk, type.toUpperCase().equals("INTEGER")&&pk, "");
+		return makeColumn(name, type, pk, type.toUpperCase().equals("INTEGER")
+				&& pk, "");
 	}
 
-	private String makeTableQuery(String tablename, List<Map<String,String>> columns) {
+	private String makeTableQuery(String tablename,
+			List<Map<String, String>> columns) {
 		String colname;
 		String type;
 		String primkey;
@@ -84,21 +89,23 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 		String cols = "";
 		boolean first = true;
 		for (Map<String, String> col : columns) {
-			if(first){
+			if (first) {
 				first = false;
 			} else {
 				cols += ", ";
 			}
 			colname = (String) col.get("name");
-			type    = (String) col.get("type");
-			primkey = ((String) col.get("pk")).equals("y")?"PRIMARY KEY":"";
-			autoinc = ((String) col.get("ai")).equals("y")?"AUTOINCREMENT":"";
-			comp    = (String) col.get("comp");
-			cols += String.format("%s %s %s %s %s", colname, type, primkey, autoinc, comp).trim();
+			type = (String) col.get("type");
+			primkey = ((String) col.get("pk")).equals("y") ? "PRIMARY KEY" : "";
+			autoinc = ((String) col.get("ai")).equals("y") ? "AUTOINCREMENT"
+					: "";
+			comp = (String) col.get("comp");
+			cols += String.format("%s %s %s %s %s", colname, type, primkey,
+					autoinc, comp).trim();
 		}
 		return String.format(query, tablename, cols);
 	}
-	
+
 	public void createTables() {
 		for (String name : tables.keySet()) {
 			String query = makeTableQuery(name, tables.get(name));
@@ -106,34 +113,143 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 			this.getWritableDatabase().execSQL(query);
 		}
 	}
-	
+
 	@Override
 	public void onCreate(SQLiteDatabase database) {
-		
+
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 	}
 
-	@Override
-	public void getData(String apiSection, Map<String, String> params,
-			Callback callback) {
+	public static Pair<String, String> Asign(String key, String value) {
+		Pair<String, String> res = new Pair<String, String>(key, value);
+		return res;
+	}
 
+	public static String Or(Pair<String, String> a, Pair<String, String> b) {
+		String aa = String.format("%s='%s'", a.first,
+				a.second.replaceAll("'", "''"));
+		String bb = String.format("%s='%s'", b.first,
+				b.second.replaceAll("'", "''"));
+		return String.format("%s OR %s", aa, bb);
+	}
+
+	public static String And(Pair<String, String> a, Pair<String, String> b) {
+		String aa = String.format("%s='%s'", a.first,
+				a.second.replaceAll("'", "''"));
+		String bb = String.format("%s='%s'", b.first,
+				b.second.replaceAll("'", "''"));
+		return String.format("%s AND %s", aa, bb);
 	}
 
 	@Override
-	public void saveData(String apiSection, Map<String, String> params,
+	public void getData(String section, Map<String, String> params,
 			Callback callback) {
+		String query = "SELECT * FROM %s %s";
+		String where = "";
+		if (params != null && params.size() > 0) {
+			where = "WHERE ";
+			boolean first = true;
+			for (String key : params.keySet()) {
+				if (first) {
+					first = false;
+				} else {
+					where += "AND ";
+				}
+				if (key.startsWith("$")) {
+					where += String.format("%s='%s' ", key, params.get(key)
+							.replaceAll("'", "''"));
+				} else {
+					where += String.format("%s ", params.get(key));
+				}
+			}
+		}
+		query = String.format(query, section, where).trim();
+		System.out.println(query);
+		List<Map<String, Object>> l = execute(query); 
+		if (callback != null) {
+			callback.onFinish(l);
+		}
 	}
 
 	@Override
-	public void updateData(String apiSection, Map<String, String> params,
+	public void saveData(String section, Map<String, String> params,
 			Callback callback) {
+		String query = "INSERT INTO %s(%s) VALUES(%s)";
+		String cols = "", vals = "";
+		if (params != null && params.size() > 0) {
+			cols = "";
+			vals = "";
+			boolean first = true;
+			for (String key : params.keySet()) {
+				if (first) {
+					first = false;
+				} else {
+					cols += ", ";
+					vals += ", ";
+				}
+				cols += String.format("%s", key);
+				vals += String.format("'%s'",
+						params.get(key).replaceAll("'", "''"));
+			}
+		}
+		query = String.format(query, section, cols, vals).trim();
+		List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(0);
+		System.out.println(query);
+		if (callback != null) {
+			callback.onFinish(l);
+		}
 	}
 
 	@Override
-	public void deleteData(String apiSection, String id, Callback callback) {
+	public void updateData(String section, String pk,
+			Map<String, String> params, Callback callback) {
+		String query = "UPDATE %s SET %s WHERE %s";
+		if (!params.containsKey(pk)) {
+			Log.e("SQLiteDataSource Error", String.format(
+					"'%s' key does not exists into params map", pk));
+			return;
+		}
+		String cols = "", vals = "";
+		if (params != null && params.size() > 0) {
+			vals = "";
+			boolean first = true;
+			for (String key : params.keySet()) {
+				if (first) {
+					first = false;
+				} else {
+					vals += ", ";
+				}
+				vals += String.format("%s='%s'", key, params.get(key)
+						.replaceAll("'", "''"));
+			}
+		}
+		List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(0);
+		query = String.format(query, section, cols, vals).trim();
+		System.out.println(query);
+		if (callback != null) {
+			callback.onFinish(l);
+		}
+	}
+
+	public List<Map<String, Object>> execute(String query) {
+		List<Map<String, Object>> r = new ArrayList<Map<String, Object>>(0);
+		SQLiteDatabase db = this.getWritableDatabase();
+		Cursor cursor = db.rawQuery(query, null);
+		while (cursor.moveToNext()) {
+			Map<String, Object> row = new HashMap<String, Object>();
+			for (int i = 0; i < cursor.getColumnCount(); i++) {
+				row.put(cursor.getColumnName(i), cursor.getString(i));
+			}
+			r.add(row);
+		}
+		return r;
+	}
+
+	@Override
+	public void deleteData(String section, String id, Callback callback) {
 	}
 
 }
