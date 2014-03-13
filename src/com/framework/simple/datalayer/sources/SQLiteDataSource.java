@@ -147,6 +147,9 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 	@Override
 	public void getData(String section, Map<String, String> params,
 			Callback callback) {
+		if (section.length()==0) {
+			callback.onFinish(new ArrayList<Map<String,Object>>(0));
+		}
 		String query = "SELECT * FROM %s %s";
 		String where = "";
 		if (params != null && params.size() > 0) {
@@ -167,8 +170,7 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 			}
 		}
 		query = String.format(query, section, where).trim();
-		System.out.println(query);
-		List<Map<String, Object>> l = execute(query); 
+		List<Map<String, Object>> l = execute(query);
 		if (callback != null) {
 			callback.onFinish(l);
 		}
@@ -177,6 +179,10 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 	@Override
 	public void saveData(String section, Map<String, String> params,
 			Callback callback) {
+		if (params == null || params.size() == 0) {
+			callback.onFinish(new ArrayList<Map<String, Object>>(0));
+			return;
+		}
 		String query = "INSERT INTO %s(%s) VALUES(%s)";
 		String cols = "", vals = "";
 		if (params != null && params.size() > 0) {
@@ -196,8 +202,7 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 			}
 		}
 		query = String.format(query, section, cols, vals).trim();
-		List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(0);
-		System.out.println(query);
+		List<Map<String, Object>> l = execute(query);
 		if (callback != null) {
 			callback.onFinish(l);
 		}
@@ -206,6 +211,11 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 	@Override
 	public void updateData(String section, String pk,
 			Map<String, String> params, Callback callback) {
+		if (pk == null || pk.length() == 0 || params == null
+				|| params.size() == 0) {
+			callback.onFinish(new ArrayList<Map<String, Object>>(0));
+			return;
+		}
 		String query = "UPDATE %s SET %s WHERE %s";
 		if (!params.containsKey(pk)) {
 			Log.e("SQLiteDataSource Error", String.format(
@@ -226,9 +236,8 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 						.replaceAll("'", "''"));
 			}
 		}
-		List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(0);
 		query = String.format(query, section, cols, vals).trim();
-		System.out.println(query);
+		List<Map<String, Object>> l = execute(query);
 		if (callback != null) {
 			callback.onFinish(l);
 		}
@@ -250,6 +259,14 @@ public class SQLiteDataSource extends SQLiteOpenHelper implements DataSource {
 
 	@Override
 	public void deleteData(String section, String id, Callback callback) {
+		if (id == null || id.length() == 0) {
+			callback.onFinish(new ArrayList<Map<String, Object>>(0));
+			return;
+		}
+		String query = String.format("DELETE FROM %s WHERE id='%s'", section,
+				id.replace("'", "''"));
+		List<Map<String, Object>> l = execute(query);
+		callback.onFinish(l);
 	}
 
 }
