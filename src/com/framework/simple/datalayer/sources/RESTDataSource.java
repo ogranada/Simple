@@ -30,6 +30,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.framework.simple.interfaces.Callback;
@@ -90,39 +91,51 @@ public class RESTDataSource implements DataSource {
 	@Override
 	public void getData(String apiSection, Map<String, String> params,
 			Callback callback) {
-		try {
-			String spec = apiSection;
+		String spec = apiSection;
+		if (!spec.equals("")) {
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
 			spec = spec.endsWith("/") ? spec : spec + "/";
-			HttpGet dhttpget = new HttpGet(uri + spec
-					+ parseParamsForGet(params));
-			dhttpget.setHeader("Content-Type", "application/json;charset=UTF-8");
-			try {
-				HttpResponse dresponse = dhttpclient.execute(dhttpget,
-						localContext);
-				if (callback != null) {
-					List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-							0);
-					String respStr = EntityUtils
-							.toString(dresponse.getEntity());
-					if (respStr.startsWith("[")) {
-						JSONArray arr = new JSONArray(respStr);
-						for (int i = 0; i < arr.length(); i++) {
-							l.add(toMap(arr.getJSONObject(i)));
-						}
-					} else if (respStr.startsWith("{")) {
-						JSONObject json = new JSONObject(respStr);
-						Map<String, Object> mapa = toMap(json);
-						l.add(mapa);
-					}
-					callback.onFinish(l);
-				}
-			} catch (Exception e) {
-				System.out.println("Error: " + e);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		final HttpGet dhttpget = new HttpGet(uri + spec
+				+ parseParamsForGet(params));
+		dhttpget.setHeader("Content-Type", "application/json;charset=UTF-8");
+		final Callback _callback = callback;
+		AsyncTask<Void, Integer, List<Map<String, Object>>> atAsyncTask = new AsyncTask<Void, Integer, List<Map<String, Object>>>() {
+
+			@Override
+			protected List<Map<String, Object>> doInBackground(Void... params) {
+				try {
+					HttpResponse dresponse = dhttpclient.execute(dhttpget,
+							localContext);
+					if (_callback != null) {
+						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+								0);
+						String respStr = EntityUtils.toString(dresponse
+								.getEntity());
+						if (respStr.startsWith("[")) {
+							JSONArray arr = new JSONArray(respStr);
+							for (int i = 0; i < arr.length(); i++) {
+								l.add(toMap(arr.getJSONObject(i)));
+							}
+						} else if (respStr.startsWith("{")) {
+							JSONObject json = new JSONObject(respStr);
+							Map<String, Object> mapa = toMap(json);
+							l.add(mapa);
+						}
+						return l;
+					}
+				} catch (Exception e) {
+					System.out.println("Error: " + e);
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(List<Map<String, Object>> result) {
+				_callback.onFinish(result);
+			}
+		};
+		atAsyncTask.execute(null, null, null);
 	}
 
 	private StringEntity parsePostParams(Map<String, String> params)
@@ -137,123 +150,162 @@ public class RESTDataSource implements DataSource {
 		return new StringEntity(dato.toString());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void saveData(String apiSection, Map<String, String> params,
 			Callback callback) {
-		try {
-			String spec = apiSection;
+		String spec = apiSection;
+		if (!spec.equals("")) {
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
 			spec = spec.endsWith("/") ? spec : spec + "/";
-			HttpPost dhttppost = new HttpPost(uri + spec);
-			dhttppost.setHeader("Content-Type",
-					"application/json;charset=UTF-8");
-			try {
-				dhttppost.setEntity(parsePostParams(params));
-				HttpResponse dresponse = dhttpclient.execute(dhttppost,
-						localContext);
-				if (callback != null) {
-					List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-							0);
-					String respStr = EntityUtils
-							.toString(dresponse.getEntity());
-					if (respStr.startsWith("[")) {
-						JSONArray arr = new JSONArray(respStr);
-						for (int i = 0; i < arr.length(); i++) {
-							l.add(toMap(arr.getJSONObject(i)));
-						}
-					} else if (respStr.startsWith("{")) {
-						JSONObject json = new JSONObject(respStr);
-						Map<String, Object> mapa = toMap(json);
-						l.add(mapa);
-					}
-					callback.onFinish(l);
-				}
-			} catch (Exception e) {
-				System.out.println("Error: " + e);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		final HttpPost dhttppost = new HttpPost(uri + spec);
+		dhttppost.setHeader("Content-Type", "application/json;charset=UTF-8");
+		final Callback _callback = callback;
+		AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>> at = new AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>>() {
+
+			@Override
+			protected List<Map<String, Object>> doInBackground(
+					Map<String, String>... params) {
+				try {
+					dhttppost.setEntity(parsePostParams(params[0]));
+					HttpResponse dresponse = dhttpclient.execute(dhttppost,
+							localContext);
+					if (_callback != null) {
+						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+								0);
+						String respStr = EntityUtils.toString(dresponse
+								.getEntity());
+						if (respStr.startsWith("[")) {
+							JSONArray arr = new JSONArray(respStr);
+							for (int i = 0; i < arr.length(); i++) {
+								l.add(toMap(arr.getJSONObject(i)));
+							}
+						} else if (respStr.startsWith("{")) {
+							JSONObject json = new JSONObject(respStr);
+							Map<String, Object> mapa = toMap(json);
+							l.add(mapa);
+						}
+						return l;
+					}
+				} catch (Exception e) {
+					System.out.println("Error: " + e);
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(List<Map<String, Object>> result) {
+				_callback.onFinish(result);
+			}
+		};
+		at.execute(params);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void updateData(String apiSection, String pk,
 			Map<String, String> params, Callback callback) {
-		try {
-			if (!params.containsKey(pk)) {
-				Log.e("SQLiteDataSource Error", String.format(
-						"'%s' key does not exists into params map", pk));
-				return;
-			}
-			String spec = apiSection;
+		if (!params.containsKey(pk)) {
+			Log.e("SQLiteDataSource Error", String.format(
+					"'%s' key does not exists into params map", pk));
+			return;
+		}
+		String spec = apiSection;
+		if (!spec.equals("")) {
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
 			spec = spec.endsWith("/") ? spec : spec + "/";
-			spec += params.get(pk) + "/";
-			HttpPut dhttpput = new HttpPut(uri + spec);
-			dhttpput.setHeader("Content-Type", "application/json;charset=UTF-8");
-			try {
-				dhttpput.setEntity(parsePostParams(params));
-				HttpResponse dresponse = dhttpclient.execute(dhttpput,
-						localContext);
-				if (callback != null) {
-					List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-							0);
-					String respStr = EntityUtils
-							.toString(dresponse.getEntity());
-					if (respStr.startsWith("[")) {
-						JSONArray arr = new JSONArray(respStr);
-						for (int i = 0; i < arr.length(); i++) {
-							l.add(toMap(arr.getJSONObject(i)));
-						}
-					} else if (respStr.startsWith("{")) {
-						JSONObject json = new JSONObject(respStr);
-						Map<String, Object> mapa = toMap(json);
-						l.add(mapa);
-					}
-					callback.onFinish(l);
-				}
-			} catch (Exception e) {
-				System.out.println("Error: " + e);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		spec += params.get(pk) + "/";
+		final HttpPut dhttpput = new HttpPut(uri + spec);
+		dhttpput.setHeader("Content-Type", "application/json;charset=UTF-8");
+		final Callback _callback = callback;
+		AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>> at = new AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>>() {
+
+			@Override
+			protected List<Map<String, Object>> doInBackground(
+					Map<String, String>... params) {
+				try {
+					dhttpput.setEntity(parsePostParams(params[0]));
+					HttpResponse dresponse = dhttpclient.execute(dhttpput,
+							localContext);
+					if (_callback != null) {
+						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+								0);
+						String respStr = EntityUtils.toString(dresponse
+								.getEntity());
+						if (respStr.startsWith("[")) {
+							JSONArray arr = new JSONArray(respStr);
+							for (int i = 0; i < arr.length(); i++) {
+								l.add(toMap(arr.getJSONObject(i)));
+							}
+						} else if (respStr.startsWith("{")) {
+							JSONObject json = new JSONObject(respStr);
+							Map<String, Object> mapa = toMap(json);
+							l.add(mapa);
+						}
+						return l;
+					}
+				} catch (Exception e) {
+					System.out.println("Error: " + e);
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(List<Map<String, Object>> result) {
+				_callback.onFinish(result);
+			}
+		};
+		at.execute(params);
 	}
 
 	@Override
 	public void deleteData(String apiSection, String id, Callback callback) {
-		try {
-			String spec = apiSection;
+		String spec = apiSection;
+		if (!spec.equals("")) {
 			spec = spec.startsWith("/") ? spec.substring(1) : spec;
 			spec = spec.endsWith("/") ? spec : spec + "/";
-			HttpDelete dhttpdel = new HttpDelete(uri + spec + id);
-			dhttpdel.setHeader("Content-Type", "application/json;charset=UTF-8");
-			try {
-				HttpResponse dresponse = dhttpclient.execute(dhttpdel,
-						localContext);
-				if (callback != null) {
-					List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-							0);
-					String respStr = EntityUtils
-							.toString(dresponse.getEntity());
-					if (respStr.startsWith("[")) {
-						JSONArray arr = new JSONArray(respStr);
-						for (int i = 0; i < arr.length(); i++) {
-							l.add(toMap(arr.getJSONObject(i)));
-						}
-					} else if (respStr.startsWith("{")) {
-						JSONObject json = new JSONObject(respStr);
-						Map<String, Object> mapa = toMap(json);
-						l.add(mapa);
-					}
-					callback.onFinish(l);
-				}
-			} catch (Exception e) {
-				System.out.println("Error: " + e);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		final HttpDelete dhttpdel = new HttpDelete(uri + spec + id);
+		dhttpdel.setHeader("Content-Type", "application/json;charset=UTF-8");
+		final Callback _callback = callback;
+		AsyncTask<Void, Integer, List<Map<String, Object>>> at = new AsyncTask<Void, Integer, List<Map<String, Object>>>() {
+
+			@Override
+			protected List<Map<String, Object>> doInBackground(Void... params) {
+				try {
+					HttpResponse dresponse = dhttpclient.execute(dhttpdel,
+							localContext);
+					if (_callback != null) {
+						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+								0);
+						String respStr = EntityUtils.toString(dresponse
+								.getEntity());
+						if (respStr.startsWith("[")) {
+							JSONArray arr = new JSONArray(respStr);
+							for (int i = 0; i < arr.length(); i++) {
+								l.add(toMap(arr.getJSONObject(i)));
+							}
+						} else if (respStr.startsWith("{")) {
+							JSONObject json = new JSONObject(respStr);
+							Map<String, Object> mapa = toMap(json);
+							l.add(mapa);
+						}
+						return l;
+					}
+				} catch (Exception e) {
+					System.out.println("Error: " + e);
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(List<Map<String, Object>> result) {
+				_callback.onFinish(result);
+			}
+		};
+		at.execute(null, null, null);
 	}
 
 	@SuppressWarnings("unchecked")

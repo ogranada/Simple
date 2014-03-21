@@ -2,8 +2,6 @@ package com.framework.simple.interfaces;
 
 import java.util.Map;
 
-import android.util.Pair;
-
 public interface DataSource {
 	public void getData(String section, Map<String, String> params,
 			Callback callback);
