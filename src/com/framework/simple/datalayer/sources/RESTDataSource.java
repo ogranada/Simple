@@ -73,7 +73,7 @@ public class RESTDataSource implements DataSource {
 			StatusLine resp = dresponse.getStatusLine();
 			System.out.println(resp);
 		} catch (Exception e) {
-			System.out.println("Error: " + e);
+			Log.e("REST Auth Error", e.toString());
 		}
 	}
 
@@ -86,6 +86,18 @@ public class RESTDataSource implements DataSource {
 			_params.add(new BasicNameValuePair(key, params.get(key)));
 		}
 		return "?" + URLEncodedUtils.format(_params, "UTF-8");
+	}
+
+	private StringEntity parsePostParams(Map<String, String> params)
+			throws Exception {
+		if (params == null || (params != null && params.size() == 0)) {
+			return new StringEntity("");
+		}
+		JSONObject dato = new JSONObject();
+		for (String key : params.keySet()) {
+			dato.put(key, params.get(key));
+		}
+		return new StringEntity(dato.toString());
 	}
 
 	@Override
@@ -104,12 +116,12 @@ public class RESTDataSource implements DataSource {
 
 			@Override
 			protected List<Map<String, Object>> doInBackground(Void... params) {
+				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+						0);
 				try {
 					HttpResponse dresponse = dhttpclient.execute(dhttpget,
 							localContext);
 					if (_callback != null) {
-						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-								0);
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
 						if (respStr.startsWith("[")) {
@@ -122,12 +134,11 @@ public class RESTDataSource implements DataSource {
 							Map<String, Object> mapa = toMap(json);
 							l.add(mapa);
 						}
-						return l;
 					}
 				} catch (Exception e) {
-					System.out.println("Error: " + e);
+					Log.e("REST Get Error", e.toString());
 				}
-				return null;
+				return l;
 			}
 
 			@Override
@@ -136,18 +147,6 @@ public class RESTDataSource implements DataSource {
 			}
 		};
 		atAsyncTask.execute(null, null, null);
-	}
-
-	private StringEntity parsePostParams(Map<String, String> params)
-			throws Exception {
-		if (params == null || (params != null && params.size() == 0)) {
-			return new StringEntity("");
-		}
-		JSONObject dato = new JSONObject();
-		for (String key : params.keySet()) {
-			dato.put(key, params.get(key));
-		}
-		return new StringEntity(dato.toString());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -167,13 +166,13 @@ public class RESTDataSource implements DataSource {
 			@Override
 			protected List<Map<String, Object>> doInBackground(
 					Map<String, String>... params) {
+				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+						0);
 				try {
 					dhttppost.setEntity(parsePostParams(params[0]));
 					HttpResponse dresponse = dhttpclient.execute(dhttppost,
 							localContext);
 					if (_callback != null) {
-						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-								0);
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
 						if (respStr.startsWith("[")) {
@@ -186,12 +185,11 @@ public class RESTDataSource implements DataSource {
 							Map<String, Object> mapa = toMap(json);
 							l.add(mapa);
 						}
-						return l;
 					}
 				} catch (Exception e) {
-					System.out.println("Error: " + e);
+					Log.e("REST Post Error", e.toString());
 				}
-				return null;
+				return l;
 			}
 
 			@Override
@@ -225,13 +223,13 @@ public class RESTDataSource implements DataSource {
 			@Override
 			protected List<Map<String, Object>> doInBackground(
 					Map<String, String>... params) {
+				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+						0);
 				try {
 					dhttpput.setEntity(parsePostParams(params[0]));
 					HttpResponse dresponse = dhttpclient.execute(dhttpput,
 							localContext);
 					if (_callback != null) {
-						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-								0);
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
 						if (respStr.startsWith("[")) {
@@ -244,12 +242,11 @@ public class RESTDataSource implements DataSource {
 							Map<String, Object> mapa = toMap(json);
 							l.add(mapa);
 						}
-						return l;
 					}
 				} catch (Exception e) {
-					System.out.println("Error: " + e);
+					Log.e("REST Update Error", e.toString());
 				}
-				return null;
+				return l;
 			}
 
 			@Override
@@ -274,12 +271,12 @@ public class RESTDataSource implements DataSource {
 
 			@Override
 			protected List<Map<String, Object>> doInBackground(Void... params) {
+				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
+						0);
 				try {
 					HttpResponse dresponse = dhttpclient.execute(dhttpdel,
 							localContext);
 					if (_callback != null) {
-						List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
-								0);
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
 						if (respStr.startsWith("[")) {
@@ -292,12 +289,11 @@ public class RESTDataSource implements DataSource {
 							Map<String, Object> mapa = toMap(json);
 							l.add(mapa);
 						}
-						return l;
 					}
 				} catch (Exception e) {
-					System.out.println("Error: " + e);
+					Log.e("REST Delete Error", e.toString());
 				}
-				return null;
+				return l;
 			}
 
 			@Override
