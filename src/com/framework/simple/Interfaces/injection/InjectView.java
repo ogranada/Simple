@@ -1,4 +1,4 @@
-package com.framework.simple.Interfaces.injection;
+package com.framework.simple.interfaces.injection;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

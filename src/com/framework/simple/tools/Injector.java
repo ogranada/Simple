@@ -7,8 +7,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 
-import com.framework.simple.Interfaces.injection.InjectMethod;
-import com.framework.simple.Interfaces.injection.InjectView;
+import com.framework.simple.interfaces.injection.InjectMethod;
+import com.framework.simple.interfaces.injection.InjectView;
 import com.framework.simple.interfaces.Injectable;
 
 public class Injector {
