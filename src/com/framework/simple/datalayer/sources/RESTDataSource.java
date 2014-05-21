@@ -1,11 +1,10 @@
 package com.framework.simple.datalayer.sources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import com.framework.simple.interfaces.Callback;
+import com.framework.simple.interfaces.DataSource;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -26,15 +25,16 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.json.JSONObject;
 
-import android.os.AsyncTask;
-import android.util.Log;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import com.framework.simple.interfaces.Callback;
-import com.framework.simple.interfaces.DataSource;
 
 public class RESTDataSource implements DataSource {
 
@@ -47,6 +47,9 @@ public class RESTDataSource implements DataSource {
 	String host;
 	int port;
 	String uri;
+
+    int status;
+    String statusMessage;
 
 	public RESTDataSource(String host, int port) {
 		this.host = host.contains("http://") ? host.split("http://")[1] : host;
@@ -114,6 +117,8 @@ public class RESTDataSource implements DataSource {
 		final Callback _callback = callback;
 		AsyncTask<Void, Integer, List<Map<String, Object>>> atAsyncTask = new AsyncTask<Void, Integer, List<Map<String, Object>>>() {
 
+            Exception error = null;
+
 			@Override
 			protected List<Map<String, Object>> doInBackground(Void... params) {
 				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
@@ -122,20 +127,40 @@ public class RESTDataSource implements DataSource {
 					HttpResponse dresponse = dhttpclient.execute(dhttpget,
 							localContext);
 					if (_callback != null) {
-						String respStr = EntityUtils.toString(dresponse
+                        String respStr = EntityUtils.toString(dresponse
 								.getEntity());
+                        status = dresponse.getStatusLine().getStatusCode();
+                        statusMessage = dresponse.getStatusLine().getReasonPhrase();
 						if (respStr.startsWith("[")) {
-							JSONArray arr = new JSONArray(respStr);
-							for (int i = 0; i < arr.length(); i++) {
-								l.add(toMap(arr.getJSONObject(i)));
-							}
-						} else if (respStr.startsWith("{")) {
-							JSONObject json = new JSONObject(respStr);
-							Map<String, Object> mapa = toMap(json);
-							l.add(mapa);
+                            ArrayList<HashMap<String,Object>> objs = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                objs = mapper.readValue(respStr,
+                                        new TypeReference<ArrayList<HashMap<String,Object>>>(){});
+                                for (HashMap<String,Object> o : objs){
+                                    l.add(o);
+                                }
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        } else if (respStr.startsWith("{")) {
+                            Map<String,Object> map = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                map = mapper.readValue(respStr,
+                                        new TypeReference<HashMap<String,Object>>(){});
+                                l.add(map);
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
 						}
 					}
 				} catch (Exception e) {
+                    error = e;
 					Log.e("REST Get Error", e.toString());
 				}
 				return l;
@@ -143,7 +168,13 @@ public class RESTDataSource implements DataSource {
 
 			@Override
 			protected void onPostExecute(List<Map<String, Object>> result) {
-				_callback.onFinish(result);
+                if (error!=null) {
+                    _callback.onError(error, -1);
+                } else if(status>=400 && status<600){
+                    _callback.onError(new Exception(statusMessage),status);
+                } else {
+                    _callback.onFinish(result);
+                }
 			}
 		};
 		atAsyncTask.execute(null, null, null);
@@ -163,6 +194,8 @@ public class RESTDataSource implements DataSource {
 		final Callback _callback = callback;
 		AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>> at = new AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>>() {
 
+            Exception error = null;
+
 			@Override
 			protected List<Map<String, Object>> doInBackground(
 					Map<String, String>... params) {
@@ -175,26 +208,52 @@ public class RESTDataSource implements DataSource {
 					if (_callback != null) {
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
-						if (respStr.startsWith("[")) {
-							JSONArray arr = new JSONArray(respStr);
-							for (int i = 0; i < arr.length(); i++) {
-								l.add(toMap(arr.getJSONObject(i)));
-							}
-						} else if (respStr.startsWith("{")) {
-							JSONObject json = new JSONObject(respStr);
-							Map<String, Object> mapa = toMap(json);
-							l.add(mapa);
-						}
-					}
-				} catch (Exception e) {
-					Log.e("REST Post Error", e.toString());
-				}
-				return l;
-			}
+                        status = dresponse.getStatusLine().getStatusCode();
+                        statusMessage = dresponse.getStatusLine().getReasonPhrase();
+                        if (respStr.startsWith("[")) {
+                            ArrayList<HashMap<String,Object>> objs = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                objs = mapper.readValue(respStr,
+                                        new TypeReference<ArrayList<HashMap<String,Object>>>(){});
+                                for (HashMap<String,Object> o : objs){
+                                    l.add(o);
+                                }
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        } else if (respStr.startsWith("{")) {
+                            Map<String,Object> map = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                map = mapper.readValue(respStr,
+                                        new TypeReference<HashMap<String,Object>>(){});
+                                l.add(map);
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    error = e;
+                    Log.e("REST Post Error", e.toString());
+                }
+                return l;
+            }
 
 			@Override
 			protected void onPostExecute(List<Map<String, Object>> result) {
-				_callback.onFinish(result);
+                if (error!=null) {
+                    _callback.onError(error, -1);
+                } else if(status>=400 && status<600){
+                    _callback.onError(new Exception(statusMessage),status);
+                } else {
+                    _callback.onFinish(result);
+                }
 			}
 		};
 		at.execute(params);
@@ -220,6 +279,8 @@ public class RESTDataSource implements DataSource {
 		final Callback _callback = callback;
 		AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>> at = new AsyncTask<Map<String, String>, Integer, List<Map<String, Object>>>() {
 
+            Exception error = null;
+
 			@Override
 			protected List<Map<String, Object>> doInBackground(
 					Map<String, String>... params) {
@@ -232,16 +293,35 @@ public class RESTDataSource implements DataSource {
 					if (_callback != null) {
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
-						if (respStr.startsWith("[")) {
-							JSONArray arr = new JSONArray(respStr);
-							for (int i = 0; i < arr.length(); i++) {
-								l.add(toMap(arr.getJSONObject(i)));
-							}
-						} else if (respStr.startsWith("{")) {
-							JSONObject json = new JSONObject(respStr);
-							Map<String, Object> mapa = toMap(json);
-							l.add(mapa);
-						}
+                        status = dresponse.getStatusLine().getStatusCode();
+                        statusMessage = dresponse.getStatusLine().getReasonPhrase();
+                        if (respStr.startsWith("[")) {
+                            ArrayList<HashMap<String,Object>> objs = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                objs = mapper.readValue(respStr,
+                                        new TypeReference<ArrayList<HashMap<String,Object>>>(){});
+                                for (HashMap<String,Object> o : objs){
+                                    l.add(o);
+                                }
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        } else if (respStr.startsWith("{")) {
+                            Map<String,Object> map = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                map = mapper.readValue(respStr,
+                                        new TypeReference<HashMap<String,Object>>(){});
+                                l.add(map);
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        }
 					}
 				} catch (Exception e) {
 					Log.e("REST Update Error", e.toString());
@@ -251,7 +331,13 @@ public class RESTDataSource implements DataSource {
 
 			@Override
 			protected void onPostExecute(List<Map<String, Object>> result) {
-				_callback.onFinish(result);
+                if (error!=null) {
+                    _callback.onError(error, -1);
+                } else if(status>=400 && status<600){
+                    _callback.onError(new Exception(statusMessage),status);
+                } else {
+                    _callback.onFinish(result);
+                }
 			}
 		};
 		at.execute(params);
@@ -269,6 +355,8 @@ public class RESTDataSource implements DataSource {
 		final Callback _callback = callback;
 		AsyncTask<Void, Integer, List<Map<String, Object>>> at = new AsyncTask<Void, Integer, List<Map<String, Object>>>() {
 
+            Exception error = null;
+
 			@Override
 			protected List<Map<String, Object>> doInBackground(Void... params) {
 				List<Map<String, Object>> l = new ArrayList<Map<String, Object>>(
@@ -279,16 +367,35 @@ public class RESTDataSource implements DataSource {
 					if (_callback != null) {
 						String respStr = EntityUtils.toString(dresponse
 								.getEntity());
-						if (respStr.startsWith("[")) {
-							JSONArray arr = new JSONArray(respStr);
-							for (int i = 0; i < arr.length(); i++) {
-								l.add(toMap(arr.getJSONObject(i)));
-							}
-						} else if (respStr.startsWith("{")) {
-							JSONObject json = new JSONObject(respStr);
-							Map<String, Object> mapa = toMap(json);
-							l.add(mapa);
-						}
+                        status = dresponse.getStatusLine().getStatusCode();
+                        statusMessage = dresponse.getStatusLine().getReasonPhrase();
+                        if (respStr.startsWith("[")) {
+                            ArrayList<HashMap<String,Object>> objs = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                objs = mapper.readValue(respStr,
+                                        new TypeReference<ArrayList<HashMap<String,Object>>>(){});
+                                for (HashMap<String,Object> o : objs){
+                                    l.add(o);
+                                }
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        } else if (respStr.startsWith("{")) {
+                            Map<String,Object> map = null;
+                            ObjectMapper mapper = new ObjectMapper();
+                            try {
+                                map = mapper.readValue(respStr,
+                                        new TypeReference<HashMap<String,Object>>(){});
+                                l.add(map);
+                                error = null;
+                            } catch (Exception e) {
+                                error = e;
+                                Log.e("REST Get Error", e.toString());
+                            }
+                        }
 					}
 				} catch (Exception e) {
 					Log.e("REST Delete Error", e.toString());
@@ -298,24 +405,16 @@ public class RESTDataSource implements DataSource {
 
 			@Override
 			protected void onPostExecute(List<Map<String, Object>> result) {
-				_callback.onFinish(result);
+                if (error!=null) {
+                    _callback.onError(error, -1);
+                } else if(status>=400 && status<600){
+                    _callback.onError(new Exception(statusMessage),status);
+                } else {
+                    _callback.onFinish(result);
+                }
 			}
 		};
 		at.execute(null, null, null);
-	}
-
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> toMap(JSONObject json) {
-		Map<String, Object> mapa = new HashMap<String, Object>();
-		Iterator<String> iter = json.keys();
-		while (iter.hasNext()) {
-			String key = iter.next();
-			try {
-				mapa.put(key, json.get(key));
-			} catch (JSONException e) {
-			}
-		}
-		return mapa;
 	}
 
 }
